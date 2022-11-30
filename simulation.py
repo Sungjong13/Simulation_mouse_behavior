@@ -1,8 +1,4 @@
 import random
-import pandas as pd
-import matplotlib.pyplot as plt
-
-# env = simpy.Environment()
 
 NUM_MOUSE = 100
 NUM_FOOD = 200
