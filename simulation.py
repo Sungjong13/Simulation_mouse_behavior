@@ -1,12 +1,12 @@
 import random
 
 NUM_MOUSE = 100
-NUM_FOOD = 200
-NUM_FOOD_MOVEDBY_MOUSE = 1.5
+NUM_FOOD = 100
+NUM_FOOD_MOVEDBY_MOUSE = 2
 WATER_PENALTY = 1
 REQUIRED_FOOD_PER_MOUSE = 1 # borderline food requirement to reward behavior. food intake above this number will be rewarded.
-BEHAVIOR_REWARD_STRENGTH = 3 # 1 is default. constant multiplied to how much a 
-SIMULATION_TIME = 1 # repeat simulation this amount of times
+BEHAVIOR_REWARD_STRENGTH = 3 # constant multiplied to how much a mouse is rewarded/punished
+SIMULATION_TIME = 100 # repeat simulation this amount of times
 BEHAVIOR_NAME_DIC = {"A":"hunt","B":"scavenge","C":"stayhome"}
 MINIMUM_PROBABILITY = 1 # behavior occurance probability will not go lower than this %
 
@@ -71,6 +71,10 @@ class Mouse:
     def get_preference(self):
         return {self.behavior_name_dic[bh_code]:self.preference[bh_code] for bh_code in self.behavior_name_dic}
 
+    def go_home(self):
+        """reset mouse position to home"""
+        self.position = "pf_home"
+
 
 def create_mouse_list(num_mouse=NUM_MOUSE):
     """initialize n mouse objects for simulation. input number of mice, return mouse_list"""
@@ -95,10 +99,11 @@ def run_simulation(mouse_list, num_food_movedby_mouse=NUM_FOOD_MOVEDBY_MOUSE, re
     for mouse in mouse_list:
         mouse.calculate_food_acquired()
         mouse.update_preference(required_food_per_mouse, behavior_reward_strength, minimum_probability)
+        mouse.go_home()
     
     return mouse_list
 
-def reset_environment(num_mouse=NUM_MOUSE, num_food=NUM_FOOD):
+def set_environment(num_mouse=NUM_MOUSE, num_food=NUM_FOOD):
     """may use to reset environment in other files"""
     global Environment
     Environment = {"pf_home":{"num_mouse":num_mouse,"num_food":0},"pf_food":{"num_mouse":0,"num_food":num_food}}
@@ -114,11 +119,12 @@ def run_full_simulation(simulation_time=SIMULATION_TIME):
     # run simulation
     for _ in range(simulation_time):
         # reset environment status
-        reset_environment()
+        set_environment()
 
-        run_simulation(mouse_list)
+        mouse_list = run_simulation(mouse_list)
         data_list.append(get_data(mouse_list))
 
+    return data_list
 
 
 if __name__ == "__main__":
