@@ -70,51 +70,58 @@ class Mouse:
     
     def get_preference(self):
         return {self.behavior_name_dic[bh_code]:self.preference[bh_code] for bh_code in self.behavior_name_dic}
-            
 
-def create_mouse_list(num_mouse):
+
+def create_mouse_list(num_mouse=NUM_MOUSE):
     """initialize n mouse objects for simulation. input number of mice, return mouse_list"""
     mouse_list = [Mouse(mouse_name= "mouse" + str(i+1), behavior_name_dic= BEHAVIOR_NAME_DIC) for i in range(num_mouse)]
     return mouse_list
 
 def get_data(mouse_list):
-    """get current mouse status for all mice in mouse_list."""
+    """get 2d list of current mouse status for all mice in mouse_list."""
     data = [[mouse.name, mouse.get_preference(), mouse.get_behavior_name(), mouse.food_acquired] for mouse in mouse_list]
     return data
 
-def run_simulation(mouse_list):
+def run_simulation(mouse_list, num_food_movedby_mouse=NUM_FOOD_MOVEDBY_MOUSE, required_food_per_mouse=REQUIRED_FOOD_PER_MOUSE, behavior_reward_strength=BEHAVIOR_REWARD_STRENGTH, minimum_probability=MINIMUM_PROBABILITY):
     """run one cycle of the full simulation ."""
     global Environment
 
     # update environment according to each mouse behavior
     for mouse in mouse_list:
         mouse.decide_behavior()
-        mouse.behave(NUM_FOOD_MOVEDBY_MOUSE)
+        mouse.behave(num_food_movedby_mouse)
 
     # update each mouse preference according to environment
     for mouse in mouse_list:
         mouse.calculate_food_acquired()
-        mouse.update_preference(REQUIRED_FOOD_PER_MOUSE, BEHAVIOR_REWARD_STRENGTH, MINIMUM_PROBABILITY)
+        mouse.update_preference(required_food_per_mouse, behavior_reward_strength, minimum_probability)
     
     return mouse_list
 
+def reset_environment(num_mouse=NUM_MOUSE, num_food=NUM_FOOD):
+    """may use to reset environment in other files"""
+    global Environment
+    Environment = {"pf_home":{"num_mouse":num_mouse,"num_food":0},"pf_food":{"num_mouse":0,"num_food":num_food}}
 
-
-if __name__ == "__main__":
+def run_full_simulation(simulation_time=SIMULATION_TIME):
+    """function for convenience. will run simulation for intended amount of times. returns 3d data list"""
     # initialize data list
     data_list = []
 
     # initialize objects
-    mouse_list = create_mouse_list(NUM_MOUSE)
+    mouse_list = create_mouse_list()
 
     # run simulation
-    for _ in range(SIMULATION_TIME):
+    for _ in range(simulation_time):
         # reset environment status
-        Environment = {"pf_home":{"num_mouse":NUM_MOUSE,"num_food":0},"pf_food":{"num_mouse":0,"num_food":NUM_FOOD}}
+        reset_environment()
 
         run_simulation(mouse_list)
         data_list.append(get_data(mouse_list))
 
+
+
+if __name__ == "__main__":
     # show value for each mouse
     for mouse in data_list[0]:
         print(mouse)
