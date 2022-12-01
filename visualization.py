@@ -15,17 +15,20 @@ def create_behaviorcount_per_cycle(df_list):
     """return df_behaviorcount, has count of behaviors per each cycle"""
     temp_list = []
     for idx, df in enumerate(df_list):
-        df = df.groupby('Behavior Taken', sort=True).count().rename(columns={"Behavior Preference":idx+1})[idx+1]
+        df = df.groupby('Behavior Taken', sort=False).count().rename(columns={"Behavior Preference":idx+1})[idx+1]
         temp_list.append(df)
     
-    return pd.concat(temp_list,axis=1)
+    result = pd.concat(temp_list,axis=1).reindex(sim.BEHAVIOR_NAME_DIC.values())
+    result = result.fillna(0)
+    return result
 
-def visualize_stackplot(df, title="Behavior Count", supplementary_text=""):
+def visualize_stackplot(df, title="Behavior Count", supplementary_text="", supp_text_2=""):
     """draw stackplot with matplotlib"""
     # draw stackplot
     plt.figure(figsize=(5,4))
     
-    plt.text(30,102, supplementary_text, fontsize=8, ha="right")
+    plt.text(len(df.columns),sim.NUM_MOUSE*51/50, supplementary_text, fontsize=8, ha="right")
+    plt.text(0,sim.NUM_MOUSE*51/50, supp_text_2, fontsize=8, ha="left")
     plt.stackplot(df.columns, df)
     plt.legend(df.index, loc='upper left')
     plt.margins(0,0)
@@ -77,6 +80,10 @@ if __name__ == "__main__":
 
     df_list = create_df_list(data_list)
     df_behaviorcount = create_behaviorcount_per_cycle(df_list)
-    visualize_stackplot(df_behaviorcount, supplementary_text=f"Food : {sim.NUM_FOOD}\nSwimPen : -{sim.WATER_PENALTY}\nCarryCap : {sim.NUM_FOOD_MOVEDBY_MOUSE}")
+    visualize_stackplot(df_behaviorcount, 
+        supp_text_2=f"Food : {sim.NUM_FOOD}\nSwimPen : -{sim.WATER_PENALTY}\nCarryCap : {sim.NUM_FOOD_MOVEDBY_MOUSE}",
+        supplementary_text=f"RwrdStrgth : {sim.BEHAVIOR_REWARD_STRENGTH}\nFoodReq : {sim.REQUIRED_FOOD_PER_MOUSE}\nMinProb : {sim.MINIMUM_PROBABILITY}")
+
+
     # pref_df_list = create_preference_df_list(data_list)
     # print(create_preferencechange_per_cycle(pref_df_list))

@@ -3,11 +3,14 @@ import random
 NUM_MOUSE = 100
 NUM_FOOD = 100
 NUM_FOOD_MOVEDBY_MOUSE = 2
-WATER_PENALTY = 1
+WATER_PENALTY = 0.8
 REQUIRED_FOOD_PER_MOUSE = 1 # borderline food requirement to reward behavior. food intake above this number will be rewarded.
-BEHAVIOR_REWARD_STRENGTH = 3 # constant multiplied to how much a mouse is rewarded/punished
-SIMULATION_TIME = 100 # repeat simulation this amount of times
+BEHAVIOR_REWARD_STRENGTH = 1 # constant multiplied to how much a mouse is rewarded/punished
+SIMULATION_TIME = 400 # repeat simulation this amount of times
 BEHAVIOR_NAME_DIC = {"A":"hunt","B":"scavenge","C":"stayhome"}
+# INITIAL_BEHAVIOR_PREFERENCE = {bh_code:100/len(BEHAVIOR_NAME_DIC) for bh_code in BEHAVIOR_NAME_DIC}
+# INITIAL_BEHAVIOR_PREFERENCE = {"A":33,"B":33,"C":34}
+### bug when providing value as instance for class constructor... but why..? ###
 MINIMUM_PROBABILITY = 1 # behavior occurance probability will not go lower than this %
 
 
@@ -15,7 +18,8 @@ class Mouse:
     def __init__(self, mouse_name, behavior_name_dic):
         self.name = mouse_name
         self.behavior_name_dic = behavior_name_dic
-        self.preference = {bh_code:100/len(behavior_name_dic) for bh_code in behavior_name_dic} # initial probability(%) of mouse selecting a behavior
+        # self.preference = {bh_code:100/len(BEHAVIOR_NAME_DIC) for bh_code in BEHAVIOR_NAME_DIC} # initial probability(%) of mouse selecting a behavior
+        self.preference = {"A":1,"B":1,"C":98}
         self.position = "pf_home"
     
     def decide_behavior(self):
@@ -28,7 +32,7 @@ class Mouse:
                 break
     
     # behaviors
-    def behave(self, num_food_movedby_mouse):
+    def behave(self, num_food_movedby_mouse, water_penalty=WATER_PENALTY):
         """act upon self.behavior and change the environment"""
         global Environment
         # hunt
@@ -36,21 +40,28 @@ class Mouse:
             Environment["pf_home"]["num_mouse"] -=1
             Environment["pf_food"]["num_mouse"] +=1
             self.position = "pf_food"
+            self.water_penalty = water_penalty
         elif self.behavior == "B":
-            Environment["pf_food"]["num_food"] -= num_food_movedby_mouse
-            Environment["pf_home"]["num_food"] += num_food_movedby_mouse
+            if Environment["pf_food"]["num_food"] != 0:
+                Environment["pf_food"]["num_food"] -= num_food_movedby_mouse
+                Environment["pf_home"]["num_food"] += num_food_movedby_mouse
+                if Environment["pf_food"]["num_food"] < 0:
+                    Environment["pf_home"]["num_food"] += Environment["pf_food"]["num_food"]
+                    Environment["pf_food"]["num_food"] = 0
+            self.water_penalty = water_penalty
         elif self.behavior == "C":
+            self.water_penalty = 0
             pass
     
     def calculate_food_acquired(self):
         global Environment
-        self.food_acquired = Environment[self.position]["num_food"] / Environment[self.position]["num_mouse"]
+        self.food_acquired = Environment[self.position]["num_food"] / Environment[self.position]["num_mouse"] - self.water_penalty
         # <<sidenote>> will denominator always be bigger than 0?
 
     def update_preference(self, required_food_per_mouse, behavior_reward_strength, minimum_probability):
         """update preference according to self.food_acquired"""
 
-        # increase/decrease all probabilities so they add up to 100.
+        # increase/decrease all probabilities according to food_acquired.
         for bh_code in self.preference:
             if bh_code == self.behavior:
                 self.preference[bh_code] += behavior_reward_strength * (len(self.preference)-1) * (self.food_acquired - required_food_per_mouse)
@@ -128,6 +139,4 @@ def run_full_simulation(simulation_time=SIMULATION_TIME):
 
 
 if __name__ == "__main__":
-    # show value for each mouse
-    for mouse in data_list[0]:
-        print(mouse)
+    pass
